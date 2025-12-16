@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: calc(100vh - var(--header-height));
+    width: 100%;
+    padding: 40px;
+    gap: 40px;
+    flex-wrap: wrap;
+">
+
+    <!-- 左：ログインフォーム -->
+    <div class="card" style="width: 100%; max-width: 420px; padding: 40px; flex: 1;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <i class="fa-solid fa-layer-group fa-3x" style="color: var(--primary);"></i>
+            <h2 style="border: none; margin-top: 10px;">Login</h2>
+            <p class="text-muted">メールアドレスによるログイン</p>
+        </div>
+
+        <form method="POST">
+            <label style="font-weight: bold; display: block; margin-bottom: 5px;">
+                メールアドレス
+            </label>
+            <div style="position: relative;">
+                <i class="fa-regular fa-envelope"
+                   style="position: absolute; top: 13px; left: 12px; color: #aaa;"></i>
+                <input
+                    type="email"
+                    name="email"
+                    required
+                    placeholder="example@example.com"
+                    style="padding-left: 35px;"
+                >
+            </div>
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+                style="width: 100%; padding: 12px; font-size: 1rem; margin-top: 20px;"
+            >
+                認証コードを送信
+            </button>
+        </form>
+    </div>
+
+    <!-- 右：説明 / Q&A -->
+    <div class="card" style="width: 100%; max-width: 480px; padding: 40px; flex: 1;">
+        <h3 style="margin-bottom: 20px; font-size: 1.3rem;">
+            ログインについて
+        </h3>
+
+        <div style="margin-bottom: 25px;">
+            <p style="font-weight: bold; margin-bottom: 5px;">
+                メールアドレスだけでログインできます
+            </p>
+            <p style="color: #555;">
+                パスワードを入力する必要はありません。<br>
+                入力したメールアドレス宛に認証コードが送信されます。
+            </p>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <p style="font-weight: bold; margin-bottom: 5px;">
+                どのメールアドレスが使えますか？
+            </p>
+            <p style="color: #555;">
+                本サービスに登録されているメールアドレスをご利用ください。
+            </p>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <p style="font-weight: bold; margin-bottom: 5px;">
+                メールが届かない場合
+            </p>
+            <p style="color: #555;">
+                迷惑メールフォルダをご確認ください。<br>
+                それでも届かない場合は、管理者にお問い合わせください。
+            </p>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <p style="font-weight: bold; margin-bottom: 5px;">
+                セキュリティについて
+            </p>
+            <p style="color: #555;">
+                認証には一時的なコードを使用しており、
+                パスワードは保存されません。
+            </p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

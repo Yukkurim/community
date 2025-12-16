@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+{% block title %}ナレッジベース{% endblock %}
+
+{% block content %}
+
+<style>
+/* モーダル用CSS */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.design-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.design-item {
+    border: 2px solid transparent;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.design-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.design-item.selected {
+    border-color: var(--primary);
+    background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+.design-item.selected::after {
+    content: '\f00c';
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+}
+
+.design-thumb {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    background: #f0f0f0;
+}
+
+.design-title {
+    padding: 8px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* プログレスバー */
+.progress-container {
+    margin-top: 20px;
+    display: none;
+}
+.progress-bar-bg {
+    background: #eee;
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+}
+.progress-bar-fill {
+    height: 100%;
+    background: var(--primary);
+    width: 0%;
+    transition: width 0.3s;
+}
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2><i class="fa-solid fa-book-open"></i> ナレッジベース</h2>
+    <button onclick="document.getElementById('post-form').style.display='block'" class="btn btn-primary">
+        <i class="fa-solid fa-pen-nib"></i> 記事を投稿する
+    </button>
+</div>
+
+<div id="post-form" class="card" style="display: none; border: 2px solid var(--primary); padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3>新規記事作成</h3>
+        <button type="button" onclick="document.getElementById('post-form').style.display='none'" style="background:none; border:none; cursor:pointer; font-size: 1.5rem; line-height: 1;">&times;</button>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="text" name="title" placeholder="タイトルを入力" required style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">
+        <input type="text" name="tags" placeholder="タグ (カンマ区切り: Python, Flask, Tip)" style="margin-bottom: 15px;">
+
+        <div style="margin-bottom: 10px; display:flex; flex-wrap:wrap; gap:5px;">
+            <button type="button" onclick="insertMarkdown('# ', '')">H1</button>
+            <button type="button" onclick="insertMarkdown('## ', '')">H2</button>
+            <button type="button" onclick="insertMarkdown('### ', '')">H3</button>
+            <button type="button" onclick="insertMarkdown('**', '**')"><b>太字</b></button>
+            <button type="button" onclick="insertMarkdown('_', '_')"><i>斜体</i></button>
+            <button type="button" onclick="insertMarkdown('~~', '~~')"><s>打ち消し</s></button>
+            <button type="button" onclick="insertMarkdown('`', '`')">コード</button>
+            <button type="button" onclick="insertMarkdown('```\n', '\n```')">コードブロック</button>
+            <button type="button" onclick="insertMarkdown('- ', '')">箇条書き</button>
+            <button type="button" onclick="insertMarkdown('1. ', '')">番号リスト</button>
+            <button type="button" onclick="insertMarkdown('> ', '')">引用</button>
+            <button type="button" onclick="insertMarkdown('[リンク名](url)', '')">リンク</button>
+            <button type="button" onclick="insertMarkdown('![画像説明](url)', '')">画像</button>
+        </div>
+
+        <div style="position: relative; margin-bottom: 15px;">
+            <textarea id="content" name="content" rows="8" placeholder="Markdown記法が使えます..." required
+                style="width: 100%; box-sizing: border-box; font-family: monospace; line-height: 1.5;"></textarea>
+            <div style="position: absolute; bottom: 25px; right: 10px; opacity: 0.5;">
+                <i class="fa-brands fa-markdown fa-2x"></i>
+            </div>
+        </div>
+
+        <div id="preview" style="border:1px solid #ddd; padding:10px; border-radius:4px; background:#f9f9f9; margin-bottom:15px; min-height:50px;"></div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <label style="cursor: pointer; color: var(--text-sub); display: flex; align-items: center; gap: 5px;">
+                    <i class="fa-solid fa-paperclip"></i> ファイル添付
+                    <input type="file" name="file" style="display: none;">
+                </label>
+                <button type="button" onclick="openCanvaFlow()" style="background: linear-gradient(45deg, #00c4cc, #7d2ae8); color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: bold;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Canva_icon_2021.svg" width="16" height="16" style="filter: brightness(0) invert(1);"> Canvaからデザインを選択
+                </button>
+            </div>
+            <button type="submit" class="btn btn-primary">Post</button>
+        </div>
+    </form>
+</div>
+
+<div id="canva-login-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px; text-align: center;">
+        <div class="modal-header">
+            <h3>Canva連携</h3>
+            <button class="modal-close" onclick="closeModal('canva-login-modal')">&times;</button>
+        </div>
+        <div style="padding: 20px;">
+            <img src="https://static.canva.com/web/images/58987257097376d783018a281f5f1cd8.svg" width="64" style="margin-bottom: 20px;">
+            <p style="margin-bottom: 20px; line-height: 1.6; color: #555;">
+                Canvaのデザインを記事に挿入するには、アカウントの連携が必要です。<br>
+                連携することで、あなたのCanvaデザイン一覧を表示し、選択した画像を自動的に記事にアップロードできます。
+            </p>
+            <div style="background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 10px; font-size: 0.9rem; margin-bottom: 20px; text-align: left;">
+                <strong>詳細:</strong> 当サイトはCanva APIを使用してデザインの読み取り権限のみを要求します。取得したデータは記事への画像埋め込みのみに使用されます。
+            </div>
+            <div style="background: #ffcdcd; border: 1px solid #ff8e8e; color: #850404; padding: 10px; font-size: 0.9rem; margin-bottom: 20px; text-align: left;">
+                <strong>注意:</strong> この機能を利用するには管理者が正しい設定を行っている必要があります。問題が発生した場合は、サイト管理者にお問い合わせください。
+            </div>
+            <button onclick="startCanvaAuth()" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1.1rem;">
+                Canvaと連携してログイン
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="canva-picker-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Canvaデザインを選択</h3>
+            <button class="modal-close" onclick="closeModal('canva-picker-modal')">&times;</button>
+        </div>
+        
+        <div id="canva-loading" style="text-align: center; padding: 40px;">
+            <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+            <p style="margin-top: 10px;">デザインを読み込み中...</p>
+        </div>
+
+        <div id="canva-designs" class="design-grid">
+            </div>
+
+        <div class="progress-container" id="upload-progress">
+            <p id="progress-text">アップロード中... (0/0)</p>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+            <button onclick="closeModal('canva-picker-modal')" class="btn btn-outline">キャンセル</button>
+            <button onclick="uploadSelectedDesigns()" class="btn btn-primary" id="canva-upload-btn" disabled>
+                選択したデザインをアップロード
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="padding: 10px 20px; margin-bottom: 20px;">
+    <form method="GET" style="display: flex; gap: 10px; margin: 0;">
+        <div style="position: relative; flex: 1;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 12px; color: #ccc;"></i>
+            <input type="text" name="search" placeholder="キーワードで検索..." value="{{ request.args.get('search', '') }}" style="margin: 0; padding-left: 35px; border-radius: 20px; width: 100%;">
+        </div>
+        <button type="submit" class="btn btn-outline" style="border-radius: 20px;">検索</button>
+    </form>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 15px;">
+    {% for article in articles %}
+        <div class="card article-list-item" style="border-left: 4px solid var(--primary); transition: 0.2s;">
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <img src="https://ui-avatars.com/api/?name={{ article.user.email }}&size=32" style="border-radius: 50%; margin-right: 10px;">
+                <div>
+                    <div style="font-weight: bold;">
+                    </div>
+                    <div class="text-muted" style="font-size: 0.8rem;">{{ article.date_posted.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+            </div>
+
+            <h2 style="font-size: 1.4rem; margin: 0 0 10px 0; border: none;">
+                <a href="{{ url_for('article_detail', article_id=article.id) }}" style="color: #333; text-decoration: none;">{{ article.title }}</a>
+            </h2>
+
+            <div style="margin-bottom: 15px;">
+                {% if article.tags %}
+                    {% for tag in article.tags.split(',') %}
+                        <span class="tag-pill" style="display: inline-block; background: #eee; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px;">{{ tag.strip() }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 4px; color: #555; max-height: 100px; overflow: hidden; position: relative; font-size: 0.9rem;">
+                {{ markdown_to_html(article.content[:200]) | safe }}...
+                <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 40px; background: linear-gradient(to top, #f9f9f9, transparent);"></div>
+            </div>
+
+            {% if article.filename %}
+                <div style="margin-top: 10px;">
+                    <a href="{{ url_for('uploaded_file', filename=article.filename) }}" class="btn btn-outline btn-sm">
+                        <i class="fa-solid fa-paperclip"></i> {{ article.filename }}
+                    </a>
+                </div>
+            {% endif %}
+
+            <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; display: flex; gap: 20px; font-size: 0.9rem;">
+                <span class="text-muted"><i class="fa-solid fa-thumbs-up" style="color: var(--primary);"></i> {{ article.like_count }} LGTM</span>
+                <span class="text-muted"><i class="fa-regular fa-comment"></i> {{ article.comments|length }} コメント</span>
+                <a href="{{ url_for('article_detail', article_id=article.id) }}" class="text-muted" style="margin-left: auto;"><i class="fa-solid fa-arrow-right"></i> 詳細を見る</a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+// Markdown挿入関数
+function insertMarkdown(before, after) {
+    const textarea = document.getElementById('content');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    const newText = before + selectedText + after;
+    textarea.setRangeText(newText, start, end, 'end');
+    textarea.focus();
+    updatePreview();
+}
+
+// リアルタイムプレビュー
+const content = document.getElementById('content');
+const preview = document.getElementById('preview');
+
+function updatePreview() {
+    preview.innerHTML = marked.parse(content.value);
+}
+
+content.addEventListener('input', updatePreview);
+updatePreview(); // 初期表示
+
+// --- Canva Integration Logic ---
+
+// ユーザーがCanvaと連携済みかどうか 
+let isCanvaConnected = {{ 'true' if current_user.canva_access_token else 'false' }};
+let selectedDesignIds = new Set();
+
+function openCanvaFlow() {
+    if (isCanvaConnected) {
+        openDesignPicker();
+    } else {
+        document.getElementById('canva-login-modal').style.display = 'flex';
+    }
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function startCanvaAuth() {
+    // ポップアップウィンドウを開く
+    const width = 600;
+    const height = 700;
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
+    
+    window.open('/connect/canva', 'CanvaAuth', `width=${width},height=${height},top=${top},left=${left}`);
+    
+    // ウィンドウからのメッセージを受け取るリスナー
+    window.addEventListener('message', function(event) {
+        if (event.data === 'canva_connected') {
+            isCanvaConnected = true;
+            closeModal('canva-login-modal');
+            openDesignPicker();
+        }
+    }, { once: true });
+}
+
+function openDesignPicker() {
+    document.getElementById('canva-picker-modal').style.display = 'flex';
+    fetchDesigns();
+}
+
+async function fetchDesigns() {
+    const container = document.getElementById('canva-designs');
+    const loading = document.getElementById('canva-loading');
+    
+    container.innerHTML = '';
+    loading.style.display = 'block';
+    
+    try {
+        const response = await fetch('/api/canva/designs');
+        const data = await response.json();
+        
+        loading.style.display = 'none';
+        
+        if (response.status === 401) {
+            // トークン切れ等の場合
+            isCanvaConnected = false;
+            closeModal('canva-picker-modal');
+            openCanvaFlow();
+            return;
+        }
+
+        if (data.designs && data.designs.length > 0) {
+            data.designs.forEach(design => {
+                const div = document.createElement('div');
+                div.className = 'design-item';
+                div.onclick = () => toggleSelection(div, design.id);
+                
+                // サムネイルがない場合のフォールバック
+                const thumbUrl = design.thumbnail ? design.thumbnail.url : 'https://via.placeholder.com/150?text=No+Image';
+                
+                div.innerHTML = `
+                    <img src="${thumbUrl}" class="design-thumb" loading="lazy">
+                    <div class="design-title">${design.title || '無題のデザイン'}</div>
+                `;
+                container.appendChild(div);
+            });
+        } else {
+            container.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">デザインが見つかりませんでした。</p>';
+        }
+        
+    } catch (error) {
+        loading.style.display = 'none';
+        container.innerHTML = '<p style="color: red; grid-column: 1/-1; text-align: center;">読み込みエラーが発生しました。</p>';
+    }
+}
+
+function toggleSelection(element, id) {
+    if (selectedDesignIds.has(id)) {
+        selectedDesignIds.delete(id);
+        element.classList.remove('selected');
+    } else {
+        selectedDesignIds.add(id);
+        element.classList.add('selected');
+    }
+    
+    const uploadBtn = document.getElementById('canva-upload-btn');
+    uploadBtn.disabled = selectedDesignIds.size === 0;
+    uploadBtn.innerText = `選択したデザインをアップロード (${selectedDesignIds.size})`;
+}
+
+async function uploadSelectedDesigns() {
+    const progressContainer = document.getElementById('upload-progress');
+    const progressText = document.getElementById('progress-text');
+    const progressFill = document.getElementById('progress-fill');
+    
+    progressContainer.style.display = 'block';
+    const total = selectedDesignIds.size;
+    let completed = 0;
+    
+    for (const designId of selectedDesignIds) {
+        try {
+            const response = await fetch('/api/canva/upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ design_id: designId })
+            });
+            
+            const result = await response.json();
+            
+            if (result.url) {
+                // マークダウンに挿入
+                insertMarkdown(`\n![Canva Design](${result.url})\n`, '');
+            } else {
+                console.error('Upload failed for design:', designId, result);
+            }
+            
+        } catch (e) {
+            console.error(e);
+        }
+        
+        completed++;
+        const percentage = (completed / total) * 100;
+        progressFill.style.width = percentage + '%';
+        progressText.innerText = `アップロード中... (${completed}/${total})`;
+    }
+    
+    // 完了処理
+    setTimeout(() => {
+        closeModal('canva-picker-modal');
+        progressContainer.style.display = 'none';
+        selectedDesignIds.clear();
+        document.getElementById('canva-upload-btn').disabled = true;
+        document.getElementById('canva-upload-btn').innerText = '選択したデザインをアップロード';
+    }, 1000);
+}
+</script>
+
+{% endblock %}

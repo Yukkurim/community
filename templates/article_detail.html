@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} - 記事詳細{% endblock %}
+{% block content %}
+<a href="{{ url_for('articles') }}" class="text-muted" style="display: block; margin-bottom: 20px;"><i class="fa-solid fa-arrow-left"></i> 記事一覧に戻る</a>
+
+<div class="card" style="padding: 30px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+        <div style="display: flex; align-items: center;">
+            <img src="https://ui-avatars.com/api/?name={{ article.user.email }}&size=40" style="border-radius: 50%; margin-right: 15px;">
+            <div>
+                <div style="font-weight: bold; font-size: 1rem; display: flex; align-items: center; white-space: nowrap;">
+                    @{{ article.user.email.split('@')[0] }}
+                </div>
+                <div class="text-muted" style="font-size: 0.8rem;">投稿日: {{ article.date_posted.strftime('%Y-%m-%d %H:%M') }}</div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;"> 
+            
+            {# 1. いいねボタン #}
+            <form method="POST" action="{{ url_for('like_article', article_id=article.id) }}" style="margin: 0;">
+                <button type="submit" class="btn" 
+                        style="background: {% if is_liked %}var(--primary){% else %}#ddd{% endif %}; color: {% if is_liked %}white{% else %}var(--text-main){% endif %}; font-weight: bold; padding: 8px 15px;">
+                    <i class="fa-solid fa-thumbs-up"></i> 
+                    LGTM! ({{ like_count }})
+                </button>
+            </form>
+
+            {# 2. その他（アクションメニュー）ボタンと削除機能 #}
+            {% if article.user_id == current_user.id or current_user.is_admin %}
+            <div style="position: relative;">
+                <button type="button" class="btn"
+                        onclick="var menu = document.getElementById('action-menu-{{ article.id }}'); menu.style.display = menu.style.display === 'block' ? 'none' : 'block';"
+                        style="background: #ddd; color: var(--text-main); font-weight: bold; padding: 8px 15px;">
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
+
+                {# ドロップダウンメニュー本体 #}
+                <div id="action-menu-{{ article.id }}" class="card" 
+                     style="position: absolute; right: 0; top: 100%; z-index: 10; padding: 10px; min-width: 150px; margin-top: 5px;
+                            display: none;"> 
+                    
+                    {# 削除フォーム #}
+                    <form action="{{ url_for('delete_article', article_id=article.id) }}" method="POST" style="margin: 0;">
+                        <button type="submit" 
+                                class="btn btn-danger w-100 text-start" 
+                                style="background: none; color: #e74c3c; border: none; padding: 5px 10px;"
+                                onclick="return confirm('本当に記事「{{ article.title }}」を削除してもよろしいですか？この操作は元に戻せません。');">
+                            <i class="fa-solid fa-trash fa-fw"></i> 記事を削除
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+            {% endif %}
+            
+        </div>
+    </div>
+
+    <h1 style="font-size: 2rem; margin-top: 0; margin-bottom: 15px;">{{ article.title }}</h1>
+    
+    <div style="margin-bottom: 30px;">
+        {% if article.tags %}
+            {% for tag in article.tags.split(',') %}
+                <span class="tag-pill" style="display: inline-block; background: #f0f0f0; padding: 4px 10px; border-radius: 5px; font-size: 0.9rem; margin-right: 8px;">{{ tag.strip() }}</span>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="article-content" style="line-height: 1.8; padding: 20px; border: 1px solid #eee; background: #fff; min-height: 100px;">
+        {{ markdown_to_html(article.content) | safe }}
+    </div>
+    
+    {% if article.filename %}
+    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
+        <a href="{{ url_for('uploaded_file', filename=article.filename) }}" class="btn btn-outline" style="font-size: 0.9rem;">
+            <i class="fa-solid fa-file-arrow-down"></i> 添付ファイル: {{ article.filename }}
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<h3 style="margin-top: 40px; border-left: 5px solid var(--primary); padding-left: 10px;">💬 コメント ({{ comments|length }})</h3>
+
+<div class="card" style="margin-bottom: 30px; padding: 20px;">
+    <form method="POST" action="{{ url_for('comment_article', article_id=article.id) }}">
+        <textarea name="content" rows="4" placeholder="コメントを入力..." required style="width: 100%; margin-bottom: 10px;"></textarea>
+        <button type="submit" class="btn btn-primary" style="float: right;">コメントする</button>
+        <div style="clear: both;"></div>
+    </form>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 20px;">
+    {% for comment in comments %}
+    <div class="card" style="padding: 15px; border-left: 3px solid #ccc; background: #fafafa;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px dotted #eee; padding-bottom: 5px;">
+            <div style="font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; white-space: nowrap;">
+                <img src="https://ui-avatars.com/api/?name={{ comment.user.email }}&size=24" style="border-radius: 50%; margin-right: 8px;">
+                @{{ comment.user.email.split('@')[0] }}
+            </div>
+            <div class="text-muted" style="font-size: 0.75rem;">
+                {{ comment.date_posted.strftime('%Y-%m-%d %H:%M') }}
+            </div>
+        </div>
+        <p style="margin: 0; line-height: 1.6;">{{ comment.content }}</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

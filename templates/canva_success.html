@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Canva連携完了{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 400px; margin: 50px auto; text-align: center; padding: 30px;">
+    <h2><i class="fa-solid fa-check-circle" style="color: var(--primary);"></i> 連携完了</h2>
+    <p style="margin: 20px 0;">Canvaとのアカウント連携が正常に完了しました。</p>
+    <p class="text-muted">このウィンドウは自動的に閉じられます。</p>
+</div>
+
+<script>
+    // ページコンテンツの読み込み完了を待ってから処理を実行
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.opener) {
+            // 親ウィンドウに連携完了を通知
+            window.opener.postMessage('canva_connected', '*');
+            
+            // ページコンテンツが表示される前に即座にウィンドウを閉じる
+            window.close();
+        } else {
+            // openerがない場合記事一覧にリダイレクト
+            setTimeout(() => {
+                window.location.href = '{{ url_for("articles") }}';
+            }, 3000); // 3秒待機してからリダイレクト
+        }
+    });
+</script>
+{% endblock %}

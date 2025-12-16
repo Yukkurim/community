@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<h2><i class="fa-solid fa-list-check"></i> タスク管理</h2>
+
+<div class="card" style="background: #fdfdfd; border: 1px dashed #ccc;">
+    <form method="POST" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 10px; align-items: center;">
+        <input type="text" name="title" placeholder="新しいタスクを入力..." required style="margin: 0;">
+        <input type="date" name="due_date" required style="margin: 0;">
+        <select name="priority" style="margin: 0;">
+            <option value="Low">Low</option>
+            <option value="Medium" selected>Medium</option>
+            <option value="High">High</option>
+        </select>
+        <div style="display: flex; align-items: center; gap: 5px;">
+             <input type="checkbox" name="is_team" id="is_team" style="width: auto; margin: 0;">
+             <label for="is_team" style="font-size: 0.9rem;">チーム共有</label>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> 追加</button>
+    </form>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+    
+    <div>
+        <h3 style="color: var(--text-main); border-left: 5px solid var(--primary); padding-left: 10px;">
+            <i class="fa-solid fa-user"></i> 個人タスク
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for todo in my_todos %}
+            <div class="card" style="padding: 15px; margin: 0; border-left: 3px solid {% if todo.priority == 'High' %}#e74c3c{% elif todo.priority == 'Medium' %}#f1c40f{% else %}#3498db{% endif %};">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-weight: bold; font-size: 1rem;">{{ todo.title }}</div>
+                        <div class="text-muted" style="font-size: 0.8rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> 期限: {{ todo.due_date }}
+                        </div>
+                    </div>
+                    <a href="{{ url_for('complete_todo', id=todo.id) }}" class="btn btn-outline btn-sm" style="color: var(--primary); border-color: var(--primary);">
+                        <i class="fa-regular fa-circle-check"></i> 完了
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-muted" style="padding: 20px; text-align: center; border: 1px solid #eee; border-radius: 4px;">タスクはありません</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div>
+        <h3 style="color: var(--text-main); border-left: 5px solid #9b59b6; padding-left: 10px;">
+            <i class="fa-solid fa-users"></i> チームタスク
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for todo in team_todos %}
+            <div class="card" style="padding: 15px; margin: 0; background: #fdfaff;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-weight: bold; font-size: 1rem;">{{ todo.title }}</div>
+                        <div style="margin-top: 5px; font-size: 0.8rem;">
+                            <span style="background: #e8e8e8; padding: 2px 6px; border-radius: 3px;">
+                                <i class="fa-solid fa-user-tag"></i> {{ todo.assignee or '未割り当て' }}
+                            </span>
+                            <span class="text-muted" style="margin-left: 10px;">{{ todo.due_date }}</span>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('complete_todo', id=todo.id) }}" class="btn btn-outline btn-sm">
+                        <i class="fa-regular fa-circle-check"></i> 完了
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-muted" style="padding: 20px; text-align: center; border: 1px solid #eee; border-radius: 4px;">タスクはありません</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

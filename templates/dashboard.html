@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+            gap: 30px; 
+        }
+    }
+</style>
+
+<div class="dashboard-grid">
+    
+    <section>
+        <h2><i class="fa-solid fa-fire" style="color: #ff9f43;"></i> 最新のナレッジ</h2>
+        {% if articles %}
+            {% for article in articles %}
+            <div class="card" style="padding: 15px 20px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <img src="https://ui-avatars.com/api/?name={{ article.user.email }}&background=random&size=24" style="border-radius: 50%;">
+                    
+                    <small class="text-muted" style="display: flex; align-items: center; white-space: nowrap;">
+                        @{{ article.user.email.split('@')[0] }}
+                    </small>
+                    
+                    <small class="text-muted">・ {{ article.date_posted.strftime('%Y-%m-%d') }}</small>
+                </div>
+                <h3 style="margin: 0 0 10px 0; font-size: 1.1rem;">
+                    <a href="{{ url_for('article_detail', article_id=article.id) }}" style="color: var(--text-main);">{{ article.title }}</a>
+                </h3>
+                <div style="margin-bottom: 10px;">
+                    {% if article.tags %}
+                        {% for tag in article.tags.split(',') %}
+                            <span class="tag-pill">{{ tag }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div style="display: flex; gap: 15px; color: var(--text-sub); font-size: 0.9rem;">
+                    <span><i class="fa-solid fa-thumbs-up"></i> {{ article.like_count }}</span>
+                    <span><i class="fa-regular fa-comment"></i> {{ article.comments|length }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card" style="text-align: center; padding: 40px;">
+                <p class="text-muted">まだ投稿がありません</p>
+                <a href="{{ url_for('articles') }}" class="btn btn-primary">最初の記事を書く</a>
+            </div>
+        {% endif %}
+    </section>
+
+    <aside>
+        <div class="card" style="border-left: 4px solid var(--primary); margin-bottom: 20px;">
+            <h3 style="font-size: 1rem; color: var(--text-sub);">直近のタスク</h3>
+            {% if todos %}
+                <ul style="margin-top: 10px; list-style: none; padding-left: 0;">
+                    {% for todo in todos %}
+                    <li style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.9rem;">{{ todo.title }}</div>
+                            <small class="text-muted">📅 {{ todo.due_date }}</small>
+                        </div>
+                        {% if todo.priority == 'High' %}
+                            <i class="fa-solid fa-flag" style="color: #e74c3c;"></i>
+                        {% else %}
+                            <i class="fa-solid fa-flag" style="color: #ccc;"></i>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                <div style="margin-top: 15px; text-align: center;">
+                    <a href="{{ url_for('todos') }}" class="text-muted" style="font-size: 0.8rem;">すべてのタスクを見る &rarr;</a>
+                </div>
+            {% else %}
+                <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 0;">期限の近いタスクはありません 🎉</p>
+            {% endif %}
+        </div>
+        <div class="card">
+            <h3 style="font-size: 1rem; margin-bottom: 10px;">関連リンク</h3>
+                <a href="https://github.com/Yukkurim/community" target="_blank" class="btn btn-outline btn-sm" style="justify-content: flex-start;">
+                    <i class="fa-solid fa-globe" style="margin-right: 5px;"></i> ソースコード
+                </a>
+            </div>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ site_config.community_name }} - {{ site_config.community_subname }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* 設定ファイルからメインカラーを読み込み */
+            --primary: {{ site_config.primary_color|default('#ffac30') }};
+            --primary-hover: #e5992b; 
+            --text-main: #161111;
+            --text-sub: #777777;
+            --bg-body: #f5f6f6;
+            --bg-white: #ffffff;
+            --border-color: #e0e0e0;
+            --sidebar-width: 240px;
+            --header-height: 60px;
+            --radius: 4px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+            --progress-bar-color: #3498db;
+        }
+
+        /* Reset & Base */
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        a { text-decoration: none; color: inherit; transition: 0.2s; }
+        ul { list-style: none; padding: 0; margin: 0; }
+
+        /* Header */
+        header {
+            background: var(--bg-white);
+            height: var(--header-height);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .brand {
+            font-weight: 800;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        /* 設定ファイルからブランド名を表示 */
+        .brand span { color: var(--primary); }
+
+        .hamburger {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .app-container {
+            display: flex;
+            margin-top: var(--header-height);
+            min-height: calc(100vh - var(--header-height));
+            width: 100%;
+        }
+        
+        .app-container.sidebar-open {
+            height: 100vh;
+            overflow: hidden; 
+        }
+
+        .app-content-wrapper {
+            flex-grow: 1; 
+            display: block;
+            width: 100%;
+            max-width: none; 
+            margin: 0 auto;
+        }
+
+        @media (min-width: 769px) {
+            .app-content-wrapper.is-authenticated {
+                max-width: 1280px;
+                margin: 0 auto;
+                display: grid;
+                grid-template-columns: var(--sidebar-width) 1fr;
+            }
+            .hamburger {
+                display: none !important;
+            }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-body);
+            padding: 20px;
+            position: sticky;
+            top: var(--header-height);
+            height: calc(100vh - var(--header-height));
+            overflow-y: auto;
+            transition: transform 0.3s ease-out;
+        }
+        .sidebar.hidden { display: none; }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            margin-bottom: 5px;
+            border-radius: var(--radius);
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: #eef9e6;
+            color: var(--primary);
+        }
+        .nav-item i { width: 20px; text-align: center; }
+
+        /* Main Content */
+        .main-content {
+            flex-grow: 1; 
+            padding: 30px; 
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        /* Components */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-outline { border: 1px solid var(--text-sub); color: var(--text-main); background: transparent; }
+        .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+
+        .card {
+            background: var(--bg-white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+        }
+        .card:hover { border-color: #ddd; }
+
+        input[type="text"], input[type="email"], input[type="password"], input[type="date"], textarea, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background: #fdfdfd;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 { font-size: 1.5rem; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        h3 { font-size: 1.2rem; margin-bottom: 15px; font-weight: 700; }
+        .text-muted { color: var(--text-sub); font-size: 0.9rem; }
+
+        .tag-pill {
+            background-color: #eee;
+            color: #555;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-right: 5px;
+            display: inline-block;
+        }
+
+        .flash-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 2000;
+        }
+        .flash {
+            padding: 15px 20px;
+            border-radius: var(--radius);
+            background: var(--bg-white);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 10px;
+            border-left: 5px solid #ccc;
+            animation: slideIn 0.3s ease-out;
+        }
+        .flash.success { border-left-color: var(--primary); }
+        .flash.danger { border-left-color: #e74c3c; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .top-progress-bar {
+            position: fixed;
+            top: var(--header-height); 
+            left: 0;
+            width: 0%; 
+            height: 3px; 
+            background-color: var(--progress-bar-color); 
+            z-index: 1001; 
+            transition: width 0.4s ease-out, opacity 0.3s 0.4s; 
+        }
+
+        @media (max-width: 768px) {
+            .hamburger { display: block; }
+            header { padding: 0 15px; }
+            .header-left { gap: 10px; }
+            .app-content-wrapper.is-authenticated { grid-template-columns: 1fr; }
+            .sidebar { 
+                position: fixed; left: 0; top: 0; height: 100vh; width: var(--sidebar-width); 
+                z-index: 2000; box-shadow: var(--shadow-md); background: var(--bg-white); 
+                transform: translateX(-100%); padding-top: calc(var(--header-height) + 20px); 
+            }
+            .sidebar.visible { transform: translateX(0); }
+            .main-content { padding: 15px; }
+            header > div:last-child { display: flex; align-items: center; gap: 5px; }
+            header .text-muted { display: none; }
+            .top-progress-bar { top: var(--header-height); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <i class="fa-solid fa-bars hamburger" onclick="toggleSidebar()"></i>
+            <div class="brand">
+                <i class="fa-solid fa-layer-group" style="color: var(--primary);"></i>
+                {{ site_config.community_name }}<span>{{ site_config.community_subname }}</span>
+            </div>
+        </div>
+        
+        <div style="display:flex; align-items:center; gap: 10px;">
+            {% if current_user.is_authenticated %}
+                <span class="text-muted" style="margin-right: 15px;">
+                    <i class="fa-regular fa-user"></i> {{ current_user.email.split('@')[0] }}
+                </span>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline btn-sm">ログアウト</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm">ログイン</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div id="progress-bar" class="top-progress-bar"></div>
+
+    <div class="app-container" id="app-container"> 
+        <div class="app-content-wrapper {% if current_user.is_authenticated %}is-authenticated{% endif %}">
+            {% if current_user.is_authenticated %}
+            <aside class="sidebar" id="sidebar">
+                <nav>
+                    <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+                        <i class="fa-solid fa-house"></i> ホーム
+                    </a>
+                    <a href="{{ url_for('articles') }}" class="nav-item {% if request.endpoint == 'articles' %}active{% endif %}">
+                        <i class="fa-solid fa-book-open"></i> 記事 / ナレッジ
+                    </a>
+                    <a href="{{ url_for('todos') }}" class="nav-item {% if request.endpoint == 'todos' %}active{% endif %}">
+                        <i class="fa-solid fa-list-check"></i> Todo / タスク
+                    </a>
+                    {% if current_user.is_admin %}
+                    <div style="margin: 15px 0 5px 15px; font-size:0.75rem; color:#999; font-weight:bold;">管理者</div>
+                    <a href="{{ url_for('admin') }}" class="nav-item {% if request.endpoint == 'admin' %}active{% endif %}">
+                        <i class="fa-solid fa-user-shield"></i> ユーザー管理
+                    </a>
+                    {% endif %}
+                </nav>
+            </aside>
+            {% endif %}
+
+            <main class="main-content {% if not current_user.is_authenticated %}login-page{% endif %}">
+                <div class="flash-container">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="flash {{ category }}">
+                                    {% if category == 'success' %}<i class="fa-solid fa-check-circle" style="color:var(--primary)"></i>{% endif %}
+                                    {% if category == 'danger' %}<i class="fa-solid fa-exclamation-circle" style="color:#e74c3c"></i>{% endif %}
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const appContainer = document.getElementById('app-container');
+            sidebar.classList.toggle('visible');
+            appContainer.classList.toggle('sidebar-open');
+        }
+
+        setTimeout(() => {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(f => f.style.display = 'none');
+        }, 5000);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const progressBar = document.getElementById('progress-bar');
+            if (progressBar) {
+                setTimeout(() => {
+                    progressBar.style.width = '90%';
+                }, 100); 
+                window.addEventListener('load', () => {
+                    progressBar.style.width = '100%';
+                    progressBar.style.opacity = '0';
+                    setTimeout(() => {
+                        progressBar.style.display = 'none';
+                    }, 800); 
+                });
+            }
+        });
+    </script>
+</body>
+</html>
