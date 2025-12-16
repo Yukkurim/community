@@ -75,6 +75,7 @@ python app.py
 | `requirements.txt` | 依存ライブラリ一覧 | `python-dotenv`, `Flask-Mail` など。 |
 | `templates/base.html` | ベースHTML | `config.json` の設定（名前、色）を適用。 |
 | `uploads/` | アップロードディレクトリ | 記事に添付されたファイルが保存される。 |
+| `instance/database.db` | アップロードディレクトリ | 記事に添付されたファイルが保存される。 |
 
 ## ライセンス
 
